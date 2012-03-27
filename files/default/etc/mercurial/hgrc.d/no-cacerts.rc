@@ -1,0 +1,3 @@
+[web]
+cacerts = 
+allow_archive = gz zip

@@ -1,0 +1,43 @@
+# /etc/profile
+
+# System wide environment and startup programs, for login setup
+# Functions and aliases go in /etc/bashrc
+
+export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
+
+# No core files by default
+ulimit -S -c 0 > /dev/null 2>&1
+
+if [ -x /usr/bin/id ]; then
+	USER="`id -un`"
+	LOGNAME=$USER
+	MAIL="/var/spool/mail/$USER"
+fi
+
+if [ -z "$INPUTRC" -a ! -f "$HOME/.inputrc" ]; then
+    INPUTRC=/etc/inputrc
+fi
+
+export PATH USER LOGNAME MAIL INPUTRC
+
+# Normalize backspace and interrupt
+#stty erase ^h intr ^c
+stty sane
+trap 2 3
+
+if [ "$PS1" ]; then
+  if [ "$BASH" ]; then
+    if [ -f /etc/bash.bashrc ]; then
+      . /etc/bash.bashrc
+    fi
+    if [ -f /etc/bashrc ]; then
+      . /etc/bashrc
+    fi
+  else
+    if [ "`id -u`" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi

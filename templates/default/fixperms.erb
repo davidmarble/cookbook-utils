@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Fix group read/writing settings on a directory.
+# created: 2011-12-06
+# author: David Marble <davidmarble@gmail.com>
+
+if ! [ "$#" -eq 3 ]; then
+	echo "Usage: fixperms <owner> <group> <directory>"
+	exit 1
+fi
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
+find $3 \( -user root -or ! -group $2 \) -exec chown $1:$2 $3 {} \;
+find $3 -type d \( ! -regex '.*\.git\/.*' \) -exec setfacl -m u::rwx,g::rwx,d:g:$2:rwX,d:m:rwx {} \;
+find $3 -type d \( ! -regex '.*\.git\/.*' \) ! \( -perm 2775 -or -perm 2777 \) -exec chmod 2775 {} \;
+find $3 -type f \( ! -regex '.*\(\.git\/.*\|\.pyc\)' \) -perm -oga+x -exec setfacl -m u::rwx,g::rwx,g:$2:rwx {} \;
+find $3 -type f \( ! -regex '.*\(\.git\/.*\|\.pyc\)' \) -perm /o+r,g+r,u+r ! -perm /g+w -exec setfacl -m u::rw,g::rw,g:$2:rw {} \;

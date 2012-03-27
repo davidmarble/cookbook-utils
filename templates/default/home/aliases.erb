@@ -1,0 +1,155 @@
+# ~/.aliases
+
+# Easier navigation: .., ..., ~ and -
+alias cd..="cd .."
+alias ..="cd .."
+alias ...="cd ../.."
+alias ~="cd ~" # `cd` is probably faster to type though
+alias -- -="cd -"
+
+# ls
+alias ls="ls -F --color=auto"
+alias l="ls -lAh"
+alias ll="ls -l"
+#alias la='ls -A'
+# List all files colorized in long format, including dot files
+alias la="ls -Gla"
+# List only directories
+alias lsd='ls -l | grep "^d"'
+
+# Undo a `git push`
+alias undopush="git push -f origin HEAD^:master"
+
+# IP addresses
+alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en1"
+alias ips="ifconfig -a | perl -nle'/(\d+\.\d+\.\d+\.\d+)/ && print $1'"
+
+# View HTTP traffic
+alias sniff="<%= @sudo -%>ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
+alias httpdump="<%= @sudo -%>tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
+
+# Start an HTTP server from a directory
+alias server="open http://localhost:8080/ && python -m SimpleHTTPServer 8080"
+
+# Trim new lines and copy to clipboard
+alias c="tr -d '\n' | pbcopy"
+
+# Shortcuts
+<% if node.attribute?('python') and node.attribute?('webapp') and node.python.has_key?('WORKON_HOME') -%>
+function www { cd <%= node.webapp.deploy_root -%>/$1; }
+function <%= node.webapp.app_name -%> { 
+	case "$*" in
+	stop)
+		if pgrep -f supervisor; then <%= @sudo -%>supervisorctl stop all; fi
+		if pgrep -f nginx; then <%= @sudo -%>/etc/init.d/nginx stop; fi
+		if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
+		if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
+		;;
+	start|prod)
+		if ! pgrep -f supervisor; then
+			if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
+			<%= @sudo -%>/etc/init.d/supervisord start
+		else
+			if pgrep -f 'gunicorn.*debug'; then <%= @sudo -%>pkill -9 -f 'gunicorn.*debug'; fi
+			<%= @sudo -%>supervisorctl start all
+		fi
+		if ! pgrep -f nginx; then <%= @sudo -%>/etc/init.d/nginx start; fi
+		cd -
+		;;
+	restart)
+		$0 stop
+		$0 start
+		;;
+	debug)
+		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
+		<%= @sudo -%>supervisorctl stop gunicorn 2>/dev/null
+		<%= @sudo -%>nohup <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/gunicorn_django -c <%= node.webapp.python.gunicorn.debug -%> > <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/logs/gunicorn-debug.log 2>&1 &
+		cd -
+		;;
+	refresh)
+		<%= @sudo -%>supervisorctl update 
+		<%= @sudo -%>supervisorctl restart all
+		;;
+	reload|compile)
+		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
+		if [ -f ./pavement.py ]; then
+            <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/paver coffeecompile
+        else
+            coffee -o ./static_media/js/ ./static_source/coffee/
+        fi
+		compass compile --force
+		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py collectstatic --noinput
+		cd -
+		if ! pgrep -f supervisor; then
+			<%= @sudo -%>/etc/init.d/supervisord start
+		else
+			<%= @sudo -%>supervisorctl reload 
+		fi
+		;;
+	pull)
+		<%= @sudo -%>supervisorctl stop all
+		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
+		git pull
+		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py syncdb --migrate
+		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/paver coffeecompile
+		compass compile --force
+		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py collectstatic --noinput
+		cd -
+		<%= @sudo -%>supervisorctl update 
+		<%= @sudo -%>supervisorctl start all
+		;;
+	status)
+		<%= @sudo -%>supervisorctl status
+		<%= @sudo -%>/etc/init.d/nginx status
+		if [ -f /etc/init.d/mongod ]; then <%= @sudo -%>/etc/init.d/mongod status; fi
+		if [ -f /etc/init.d/mongodb ]; then <%= @sudo -%>/etc/init.d/mongodb status; fi
+		if [ -f /etc/init.d/elasticsearch ]; then <%= @sudo -%>/etc/init.d/elasticsearch status; fi
+		if [ -f /etc/init.d/redis-server ]; then <%= @sudo -%>/etc/init.d/redis-server status; fi
+		;;
+	*)
+		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live/$*;
+		;;
+	esac
+}
+<% end -%>
+
+function s { 
+	if [ "$*x" == "x" ]; then
+		<%= @sudo -%>supervisorctl status
+	else
+		<%= @sudo -%>supervisorctl $*;
+	fi
+}
+function sr { if [ "$*" == "" ]; then <%= @sudo -%>supervisorctl reload; else <%= @sudo -%>supervisorctl restart $*; fi }
+alias ss="<%= @sudo -%>supervisorctl status"
+
+function n { 
+	if [ "$*x" == "x" ]; then
+		<%= @sudo -%>/etc/init.d/nginx status
+	else
+		<%= @sudo -%>/etc/init.d/nginx $*;
+	fi
+}
+alias nr="<%= @sudo -%>/etc/init.d/nginx restart"
+alias ns="<%= @sudo -%>/etc/init.d/nginx status"
+
+alias g="git"
+alias v="vim"
+alias vi=vim
+
+# rbenv
+alias be="bundle exec"
+
+# File size
+alias fs="stat -f \"%%z bytes\""
+
+# ROT13-encode text. Works for decoding, too! ;)
+alias rot13='tr a-zA-Z n-za-mN-ZA-M'
+
+# misc
+alias rmpyc='find . -type f -name "*.pyc" -print0 | xargs -0 rm -v'
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'

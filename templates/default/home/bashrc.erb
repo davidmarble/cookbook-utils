@@ -1,0 +1,20 @@
+# ~/.bashrc
+###########
+# Put custom aliases, functions, and environment here.
+# Override the default ~/.aliases here, because chef provisioning
+# creates a fresh copy of ~/.aliases each time.
+###########
+
+##########################
+# Interactive login extras
+##########################
+if [ -n "$PS1" ]; then
+    # Fix for byobu (or screen/tmux?) not triggering /etc/profile with PS1 set
+    if ! [ "`type -t set_prompt`" ] && (grep -q set_prompt /etc/bashrc || grep -q set_prompt /etc/bash.bashrc); then
+        source /etc/profile
+    fi
+fi
+##############################
+# End interactive login extras
+##############################
+

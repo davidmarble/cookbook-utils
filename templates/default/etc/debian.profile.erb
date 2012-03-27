@@ -1,0 +1,16 @@
+if [ "$PS1" ]; then
+  if [ "$BASH" ]; then
+    if [ -f /etc/bash.bashrc ]; then
+      . /etc/bash.bashrc
+    fi
+    if [ -f /etc/bashrc ]; then
+      . /etc/bashrc
+    fi
+  else
+    if [ "`id -u`" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi
