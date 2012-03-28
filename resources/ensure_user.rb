@@ -11,6 +11,7 @@ attribute :key, :kind_of => String, :default => nil
 attribute :pubkey, :kind_of => String, :default => nil
 attribute :email, :kind_of => String, :default => nil
 attribute :ssh_agent, :kind_of => [ TrueClass, FalseClass ], :default => false
+attribute :update_if_exists, :kind_of => [ TrueClass, FalseClass ], :default => true
 
 # Password can be plain-text or shadow
 attribute :password, :kind_of => String, :default => ""

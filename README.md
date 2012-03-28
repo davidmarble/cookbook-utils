@@ -48,6 +48,7 @@ Attributes:
 * `ssh_agent` (default=false) - enables ssh_agent on login
 * `password` (string, optional) - can be plain-text or shadow
 * `userinfo` (hash, optional) - an optional way to pass in all of the above.
+* `update_if_exists` (default=true) - update the user if they already exist.
 
 ### utils_ensure_group
 
