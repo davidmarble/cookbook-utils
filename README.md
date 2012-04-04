@@ -49,6 +49,7 @@ Attributes:
 * `password` (string, optional) - can be plain-text or shadow
 * `userinfo` (hash, optional) - an optional way to pass in all of the above.
 * `update_if_exists` (default=true) - update the user if they already exist.
+* `dotfiles_if_exists` (default=false) - give the user copies of dotfiles if the user already exists.
 
 ### utils_ensure_group
 

@@ -12,47 +12,50 @@ action :ensure do
     rescue Chef::Exceptions::ShellCommandFailed
     end
 
-    if not userexists or @new_resource.update_if_exists == true
-    
-        if @new_resource.userinfo
-            userinfo = @new_resource.userinfo
-            userinfo.each_pair do |key, value|
-                @new_resource.instance_variable_set("@#{key}", value)
-            end
+    if @new_resource.userinfo
+        userinfo = @new_resource.userinfo
+        userinfo.each_pair do |key, value|
+            @new_resource.instance_variable_set("@#{key}", value)
         end
+    end
 
-        if @new_resource.home
-            userdir = @new_resource.home
+    if @new_resource.home
+        userdir = @new_resource.home
+    else
+        if username == "root"
+            userdir = "/root"
         else
-            if username == "root"
-                userdir = "/root"
-            else
-                # Get default home directory
-                begin
-                    p = shell_out!("grep ^HOME= /etc/default/useradd")
-                    userhome = p.stdout.gsub("HOME=","").strip().chomp.strip()
-                    if userhome.length < 1
-                        userhome = "/home"
-                    end
-                rescue #Chef::Exceptions::ShellCommandFailed
+            # Get default home directory
+            begin
+                p = shell_out!("grep ^HOME= /etc/default/useradd")
+                userhome = p.stdout.gsub("HOME=","").strip().chomp.strip()
+                if userhome.length < 1
                     userhome = "/home"
                 end
-                
-                userdir = userhome + "/" + username
+            rescue #Chef::Exceptions::ShellCommandFailed
+                userhome = "/home"
             end
+            
+            userdir = userhome + "/" + username
         end
+    end
+    
+    dotfiles_if_exists = @new_resource.dotfiles_if_exists
+    update_if_exists = @new_resource.update_if_exists
+    
+    disabled = @new_resource.disabled
+    shell = disabled ? "/sbin/nologin" : @new_resource.shell ? @new_resource.shell : "/bin/bash"
+    comment = @new_resource.full_name ? @new_resource.full_name : username
+    shadow_password = @new_resource.password.match(/^\$/) ? @new_resource.password : nil
+    uid = @new_resource.uid
+    system = @new_resource.system
+    key = @new_resource.key
+    pubkey = @new_resource.pubkey
+    email = @new_resource.email
+    ssh_agent = @new_resource.ssh_agent
         
-        disabled = @new_resource.disabled
-        shell = disabled ? "/sbin/nologin" : @new_resource.shell ? @new_resource.shell : "/bin/bash"
-        comment = @new_resource.full_name ? @new_resource.full_name : username
-        shadow_password = @new_resource.password.match(/^\$/) ? @new_resource.password : nil
-        uid = @new_resource.uid
-        system = @new_resource.system
-        key = @new_resource.key
-        pubkey = @new_resource.pubkey
-        email = @new_resource.email
-        ssh_agent = @new_resource.ssh_agent
-        
+    if not userexists or @new_resource.update_if_exists == true
+    
         # If modifying a system user to be a non-system user, create path
         if userexists and not system
             directory "#{userdir}" do
@@ -87,14 +90,18 @@ action :ensure do
             end
         end
         
-        if !disabled and !system
+    end
+        
+    if not userexists or update_if_exists or dotfiles_if_exists
+    
+        if !disabled and (!system or dotfiles_if_exists)
             template "#{userdir}/.bashrc" do
                 source "home/bashrc.erb"
                 owner username
                 group username
                 mode "0644"
                 cookbook "utils"
-                action :create_if_missing
+                # action :create_if_missing
                 # not_if "test -f #{userdir}/.bashrc"
             end
 
