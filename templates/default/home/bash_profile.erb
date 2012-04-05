@@ -1,7 +1,6 @@
 export BASH_ENV=~/.bashrc
 if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
 
-<% if @ssh_agent -%>
 SSH_ENV="$HOME/.ssh/environment" 
 
 function start_agent { 
@@ -15,14 +14,22 @@ function start_agent {
 
 # Source SSH settings, if applicable 
 
-if [ -f "${SSH_ENV}" ]; then 
-     . "${SSH_ENV}" > /dev/null 
-     ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ > /dev/null || { 
+<% if @ssh_agent -%>
+USE_SSH_AGENT=true
+<% else -%>
+USE_SSH_AGENT=false
+<% end -%>
+
+if $USE_SSH_AGENT ; then
+    if [ -f "${SSH_ENV}" ]; then 
+         . "${SSH_ENV}" > /dev/null 
+         ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ > /dev/null || { 
+             start_agent; 
+         } 
+    else 
          start_agent; 
-     } 
-else 
-     start_agent; 
+    fi
 fi
 
+# Manually add keys (use .ssh/environment instead)
 #/bin/ssh-add ~/.ssh/vagrant
-<% end -%>
