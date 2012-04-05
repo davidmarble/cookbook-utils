@@ -5,11 +5,11 @@ SSH_ENV="$HOME/.ssh/environment"
 
 function start_agent { 
      echo "Initialising new SSH agent..." 
-     /bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}" 
+     /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}" 
      echo succeeded 
      chmod 600 "${SSH_ENV}" 
      . "${SSH_ENV}" > /dev/null 
-     /bin/ssh-add; 
+     /usr/bin/ssh-add; 
 } 
 
 # Source SSH settings, if applicable 
@@ -32,4 +32,4 @@ if $USE_SSH_AGENT ; then
 fi
 
 # Manually add keys (use .ssh/environment instead)
-#/bin/ssh-add ~/.ssh/vagrant
+#/usr/bin/ssh-add ~/.ssh/vagrant
