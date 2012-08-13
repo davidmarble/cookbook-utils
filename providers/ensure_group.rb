@@ -13,11 +13,12 @@ action :ensure do
     end
         
     # if group doesn't exist, create it
-    # groupexists = `egrep -i '^#{groupname}' /etc/group`
+    # groupexists = `egrep -i "^#{groupname}" /etc/group`
     begin
-        p = shell_out!("egrep -i '^#{groupname}' /etc/group")
+        p = shell_out!("egrep -i \"^#{groupname}\" /etc/group")
         groupexists = p.stdout.strip().length > 0
-    rescue Chef::Exceptions::ShellCommandFailed
+    rescue #Chef::Exceptions::ShellCommandFailed
+        groupexists = false
     end
     
     gid = @new_resource.gid

@@ -103,11 +103,6 @@ if [ -n "$PS1" ]; then
 	# Add tab completion for SSH hostnames based on ~/.ssh/config, ignoring wildcards
 	complete -o "default" -o "nospace" -W "$(grep "^Host" ~/.ssh/config | grep -v "[?*]" | cut -d " " -f2)" scp sftp ssh
 
-	# ALIASES
-	if [ -f ~/.aliases ]; then
-		. ~/.aliases
-	fi
-
 	# enable programmable completion features (you don't need to enable
 	# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 	# sources /etc/bash.bashrc).
@@ -120,10 +115,15 @@ fi
 # End interactive login extras
 ##############################
 
+# ALIASES
+if [ -f ~/.aliases ]; then
+    . ~/.aliases
+fi
+
 if groups | grep -q www-pub; then
 
 	# CONVENIENCE. Allows things like cp file.txt $www/logs
-<% if node.attribute?('webapp') -%>
+<% if node.has_key?('webapp') and node['webapp'].has_key?('app_name') -%>
 	export www=<%= node.webapp.deploy_root %>
 	export <%= node.webapp.app_name -%>=<%= node.webapp.deploy_root -%>/<%= node.webapp.app_name %>
 	export <%= node.webapp.app_name -%>live=<%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
@@ -135,9 +135,9 @@ if groups | grep -q www-pub; then
 	#export PATH=/usr/local/bin:/usr/local/sbin:$PATH
 	#export PATH=/usr/local/share/python:$HOME/.rbenv/bin:$PATH
 
-<% if node.attribute?('python') -%>
+<% if node.has_key?('python') -%>
 	# VIRTUALENV, PIP
-<% if node.python.attribute?('WORKON_HOME') -%>
+<% if node['python'].has_key?('WORKON_HOME') -%>
 	export WORKON_HOME=<%= node.python.WORKON_HOME %>
 	export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 	export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
@@ -147,8 +147,8 @@ if groups | grep -q www-pub; then
 	export PIP_USE_MIRRORS=true
 	export PIP_VIRTUALENV_BASE=$WORKON_HOME
 	export PIP_RESPECT_VIRTUALENV=true
-<% if node.python.attribute?('pip_download_cache') -%>
-	export PIP_DOWNLOAD_CACHE=<%= node.python.pip_download_cache %>
+<% if node['python'].has_key?('pip_download_cache') -%>
+	export PIP_DOWNLOAD_CACHE=<%= node['python']['pip_download_cache'] %>
 <% else -%>
 	export PIP_DOWNLOAD_CACHE=/tmp
 <% end -%>

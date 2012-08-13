@@ -7,9 +7,10 @@ action :ensure do
     
     userexists = false
     begin
-        p = shell_out!("egrep -i '^#{username}' /etc/passwd")
+        p = shell_out!("egrep -i \"^#{username}\" /etc/passwd")
         userexists = p.stdout.strip().length > 0
-    rescue Chef::Exceptions::ShellCommandFailed
+    rescue # Chef::Exceptions::ShellCommandFailed
+        userexists = false
     end
 
     if @new_resource.userinfo

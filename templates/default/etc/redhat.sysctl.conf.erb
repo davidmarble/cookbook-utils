@@ -37,3 +37,8 @@ kernel.msgmnb = 65536
 
 # Controls the default maxmimum size of a mesage queue
 kernel.msgmax = 65536
+
+# Maximum open files
+fs.file-max = <%= @file_max %>
+
+# TODO: checkout http://samiux.wordpress.com/2009/07/26/howto-performance-tuning-for-postgresql-on-ubuntudebian/

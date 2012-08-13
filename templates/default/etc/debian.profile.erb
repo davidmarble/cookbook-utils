@@ -1,4 +1,6 @@
-if [ "$PS1" ]; then
+# Run bashrc regardless if interactive login or not
+#if [ "$PS1" ]; then
+
   if [ "$BASH" ]; then
     if [ -f /etc/bash.bashrc ]; then
       . /etc/bash.bashrc
@@ -13,4 +15,5 @@ if [ "$PS1" ]; then
       PS1='$ '
     fi
   fi
-fi
+
+#fi

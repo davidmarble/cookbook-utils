@@ -36,100 +36,100 @@ alias server="open http://localhost:8080/ && python -m SimpleHTTPServer 8080"
 alias c="tr -d '\n' | pbcopy"
 
 # Shortcuts
-<% if node.attribute?('python') and node.attribute?('webapp') and node.python.has_key?('WORKON_HOME') -%>
+<% if node.has_key?('python') and node.has_key?('webapp')  and node['webapp'].has_key?('app_name') and node['python'].has_key?('WORKON_HOME') -%>
 function www { cd <%= node.webapp.deploy_root -%>/$1; }
+function stop_<%= node.webapp.app_name -%> {
+    if pgrep -f supervisor; then <%= @sudo -%>supervisorctl stop all; fi
+    if pgrep -f nginx; then <%= @sudo -%>/etc/init.d/nginx stop; fi
+    if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
+    if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
+}
+function start_<%= node.webapp.app_name -%> {
+    if ! pgrep -f supervisor; then
+        if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
+        <%= @sudo -%>/etc/init.d/supervisord start
+    else
+        if pgrep -f 'gunicorn.*debug'; then <%= @sudo -%>pkill -9 -f 'gunicorn.*debug'; fi
+        <%= @sudo -%>supervisorctl start all
+    fi
+    if ! pgrep -f nginx; then <%= @sudo -%>/etc/init.d/nginx start; fi
+}
 function <%= node.webapp.app_name -%> { 
-	case "$*" in
-	stop)
-		if pgrep -f supervisor; then <%= @sudo -%>supervisorctl stop all; fi
-		if pgrep -f nginx; then <%= @sudo -%>/etc/init.d/nginx stop; fi
-		if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
-		if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
-		;;
-	start|prod)
-		if ! pgrep -f supervisor; then
-			if pgrep -f gunicorn; then <%= @sudo -%>pkill -9 -f gunicorn; fi
-			<%= @sudo -%>/etc/init.d/supervisord start
-		else
-			if pgrep -f 'gunicorn.*debug'; then <%= @sudo -%>pkill -9 -f 'gunicorn.*debug'; fi
-			<%= @sudo -%>supervisorctl start all
-		fi
-		if ! pgrep -f nginx; then <%= @sudo -%>/etc/init.d/nginx start; fi
-		cd -
-		;;
-	restart)
-		$0 stop
-		$0 start
-		;;
-	debug)
-		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
-		<%= @sudo -%>supervisorctl stop gunicorn 2>/dev/null
-		<%= @sudo -%>nohup <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/gunicorn_django -c <%= node.webapp.python.gunicorn.debug -%> > <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/logs/gunicorn-debug.log 2>&1 &
-		cd -
-		;;
-	refresh)
-		<%= @sudo -%>supervisorctl update 
-		<%= @sudo -%>supervisorctl restart all
-		;;
-	reload|compile)
-		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
-		if [ -f ./pavement.py ]; then
+    case "$1" in
+    stop)
+        stop_<%= node.webapp.app_name %>
+        ;;
+    start|prod)
+        start_<%= node.webapp.app_name %>
+        ;;
+    restart)
+        stop_<%= node.webapp.app_name %>
+        start_<%= node.webapp.app_name %>
+        ;;
+    refresh)
+        <%= @sudo -%>supervisorctl update 
+        <%= @sudo -%>supervisorctl restart all
+        ;;
+    reload|compile)
+        cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
+        if [ -f ./pavement.py ]; then
             <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/paver coffeecompile
         else
             coffee -o ./static_media/js/ ./static_source/coffee/
         fi
-		compass compile --force
-		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py collectstatic --noinput
-		cd -
-		if ! pgrep -f supervisor; then
-			<%= @sudo -%>/etc/init.d/supervisord start
-		else
-			<%= @sudo -%>supervisorctl reload 
-		fi
-		;;
-	pull)
-		<%= @sudo -%>supervisorctl stop all
-		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
-		git pull
-		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py syncdb --migrate
-		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/paver coffeecompile
-		compass compile --force
-		<%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py collectstatic --noinput
-		cd -
-		<%= @sudo -%>supervisorctl update 
-		<%= @sudo -%>supervisorctl start all
-		;;
-	status)
-		<%= @sudo -%>supervisorctl status
-		<%= @sudo -%>/etc/init.d/nginx status
-		if [ -f /etc/init.d/mongod ]; then <%= @sudo -%>/etc/init.d/mongod status; fi
-		if [ -f /etc/init.d/mongodb ]; then <%= @sudo -%>/etc/init.d/mongodb status; fi
-		if [ -f /etc/init.d/elasticsearch ]; then <%= @sudo -%>/etc/init.d/elasticsearch status; fi
-		if [ -f /etc/init.d/redis-server ]; then <%= @sudo -%>/etc/init.d/redis-server status; fi
-		;;
-	*)
-		cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live/$*;
-		;;
-	esac
+        compass compile --force
+        <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py collectstatic --noinput
+        cd -
+        if ! pgrep -f supervisor; then
+            <%= @sudo -%>/etc/init.d/supervisord start
+        else
+            <%= @sudo -%>supervisorctl reload 
+        fi
+        ;;
+    pull)
+        <%= @sudo -%>supervisorctl stop all
+        cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live
+        git pull
+        <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py syncdb --migrate
+        <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/paver coffeecompile
+        compass compile --force
+        <%= node.python.WORKON_HOME -%>/<%= node.webapp.app_name -%>/bin/python manage.py collectstatic --noinput
+        cd -
+        <%= @sudo -%>supervisorctl update 
+        <%= @sudo -%>supervisorctl start all
+        ;;
+    status)
+        <%= @sudo -%>supervisorctl status
+        <%= @sudo -%>/etc/init.d/nginx status
+        if [ -f /etc/init.d/mongod ]; then <%= @sudo -%>/etc/init.d/mongod status; fi
+        if [ -f /etc/init.d/mongodb ]; then <%= @sudo -%>/etc/init.d/mongodb status; fi
+        if [ -f /etc/init.d/elasticsearch ]; then <%= @sudo -%>/etc/init.d/elasticsearch status; fi
+        if [ -f /etc/init.d/redis-server ]; then <%= @sudo -%>/etc/init.d/redis-server status; fi
+        ;;
+    *)
+        cd <%= node.webapp.deploy_root -%>/<%= node.webapp.app_name -%>/live/$*;
+        workon <%= node.webapp.app_name %>
+        ;;
+    esac
 }
 <% end -%>
 
 function s { 
-	if [ "$*x" == "x" ]; then
-		<%= @sudo -%>supervisorctl status
-	else
-		<%= @sudo -%>supervisorctl $*;
-	fi
+    if [ "$*x" == "x" ]; then
+        <%= @sudo -%>supervisorctl status
+    else
+        <%= @sudo -%>supervisorctl $*;
+    fi
 }
 function sr { if [ "$*" == "" ]; then <%= @sudo -%>supervisorctl reload; else <%= @sudo -%>supervisorctl restart $*; fi }
 alias ss="<%= @sudo -%>supervisorctl status"
 
 function n { 
-	if [ "$*x" == "x" ]; then
-		<%= @sudo -%>/etc/init.d/nginx status
-	else
-		<%= @sudo -%>/etc/init.d/nginx $*;
-	fi
+    if [ "$*x" == "x" ]; then
+        <%= @sudo -%>/etc/init.d/nginx status
+    else
+        <%= @sudo -%>/etc/init.d/nginx $*;
+    fi
 }
 alias nr="<%= @sudo -%>/etc/init.d/nginx restart"
 alias ns="<%= @sudo -%>/etc/init.d/nginx status"

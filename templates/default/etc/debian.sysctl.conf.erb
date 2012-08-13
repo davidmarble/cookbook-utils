@@ -4,14 +4,14 @@
 #    256 * 1024 * 1024 = 268435456
 # shmall = shmmax / 4096 pages/byte
 
-kernel.shmmax=<%= @shmmax %>
-kernel.shmall=<%= @shmall %>
+kernel.shmmax = <%= @shmmax %>
+kernel.shmall = <%= @shmall %>
 
 net.core.netdev_max_backlog = 3000
 net.core.somaxconn = 3000
-net.ipv4.route.flush=1
+net.ipv4.route.flush = 1
 
-net.ipv4.tcp_sack=0
+net.ipv4.tcp_sack = 0
 
 # Controls IP packet forwarding
 net.ipv4.ip_forward = 0
@@ -38,3 +38,7 @@ kernel.msgmnb = 65536
 # Controls the default maxmimum size of a mesage queue
 kernel.msgmax = 65536
 
+# Maximum open files
+fs.file-max = <%= @file_max %>
+
+# TODO: checkout http://samiux.wordpress.com/2009/07/26/howto-performance-tuning-for-postgresql-on-ubuntudebian/

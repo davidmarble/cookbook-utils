@@ -7,7 +7,8 @@ when "debian", "ubuntu"
         mode 0644
         variables(
             :shmmax => node[:sysctl][:shmmax_mb].to_i*1024*1024,
-            :shmall => (node[:sysctl][:shmmax_mb].to_i*1024*1024)/4096
+            :shmall => (node[:sysctl][:shmmax_mb].to_i*1024*1024)/4096,
+            :file_max => node[:sysctl][:file_max].to_i
         )
     end
 when "redhat", "centos", "fedora"
@@ -18,7 +19,8 @@ when "redhat", "centos", "fedora"
         mode 0644
         variables(
             :shmmax => node[:sysctl][:shmmax_mb].to_i*1024*1024,
-            :shmall => (node[:sysctl][:shmmax_mb].to_i*1024*1024)/4096
+            :shmall => (node[:sysctl][:shmmax_mb].to_i*1024*1024)/4096,
+            :file_max => node[:sysctl][:file_max].to_i
         )
     end
 end

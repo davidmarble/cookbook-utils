@@ -1,2 +1,2 @@
-Host *.github.com
+Host github.com *.github.com
 	StrictHostKeyChecking no
